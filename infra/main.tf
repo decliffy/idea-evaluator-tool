@@ -1,5 +1,3 @@
-data "aws_caller_identity" "current" {}
-
 resource "random_id" "suffix" {
   byte_length = 4
 }
@@ -127,11 +125,10 @@ resource "aws_cloudfront_origin_access_control" "lambda" {
   signing_protocol                  = "sigv4"
 }
 
-# AWS managed cache / origin-request policies (stable, account-independent IDs).
+# AWS managed cache policies (stable, account-independent IDs).
 locals {
-  cache_optimized_id        = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
-  cache_disabled_id         = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled
-  all_viewer_except_host_id = "b689b0a8-53d0-40ab-baf2-68738e2966ac" # AllViewerExceptHostHeader
+  cache_optimized_id = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+  cache_disabled_id  = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled
   # Function URL host without scheme/trailing slash, for use as a CloudFront origin.
   api_origin_domain = "${aws_lambda_function_url.api.url_id}.lambda-url.${var.aws_region}.on.aws"
 }
