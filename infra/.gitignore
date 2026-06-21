@@ -1,0 +1,10 @@
+# Terraform state & local artifacts
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+tfplan
+crash.log
+
+# Build artifacts
+build/

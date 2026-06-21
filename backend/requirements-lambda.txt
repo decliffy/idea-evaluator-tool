@@ -1,0 +1,4 @@
+fastapi
+mangum
+anthropic
+python-dotenv
