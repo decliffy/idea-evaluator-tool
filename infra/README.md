@@ -14,6 +14,14 @@ Browser ──HTTPS──► CloudFront ──┬── default behavior ──�
   Fronted by a **Lambda Function URL**, not API Gateway, because API Gateway HTTP
   APIs cap integration time at 30s and a Claude evaluation takes ~27s.
 
+  **What is ASGI?** ASGI (Asynchronous Server Gateway Interface) is the standard
+  Python contract between an async web framework and the server that runs it. The
+  server hands the app a `scope` (request metadata) plus `receive`/`send` callables
+  for streaming the request and response; the app is an awaitable that talks back
+  through them. It's the async successor to WSGI, and frameworks like FastAPI and
+  Starlette are built to it — which is why any ASGI server (uvicorn, hypercorn, or
+  an adapter like Mangum) can run them.
+
   **Why Mangum?** FastAPI is an ASGI app and expects a long-running server (e.g.
   `uvicorn`), but Lambda invokes a handler with an event/context per request.
   [Mangum](https://github.com/jordaneremieff/mangum) is an adapter that translates
