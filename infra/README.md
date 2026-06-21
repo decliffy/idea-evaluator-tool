@@ -13,9 +13,38 @@ Browser ──HTTPS──► CloudFront ──┬── default behavior ──�
 - **Backend**: FastAPI (`backend/main.py`) wrapped with Mangum, on Lambda (Python 3.13).
   Fronted by a **Lambda Function URL**, not API Gateway, because API Gateway HTTP
   APIs cap integration time at 30s and a Claude evaluation takes ~27s.
+
+  **Why Mangum?** FastAPI is an ASGI app and expects a long-running server (e.g.
+  `uvicorn`), but Lambda invokes a handler with an event/context per request.
+  [Mangum](https://github.com/jordaneremieff/mangum) is an adapter that translates
+  the Lambda Function URL / API Gateway event into an ASGI request, runs it through
+  the FastAPI app, and converts the ASGI response back into the Lambda response
+  shape. This lets the exact same `app` run unchanged both locally under `uvicorn`
+  and on Lambda — no separate Lambda-specific handler or rewritten routes.
 - **Frontend**: Vite/React build in a private S3 bucket, served via CloudFront.
 - **Auth**: The Function URL uses `AWS_IAM`; CloudFront signs origin requests with
   **Origin Access Control (OAC)**. The URL is not publicly reachable.
+
+### What is OAC?
+
+**Origin Access Control (OAC)** is a CloudFront feature that lets CloudFront
+authenticate itself to an origin so the origin can stay **private** and reject any
+request that doesn't come from your distribution. CloudFront signs every forwarded
+request with **AWS SigV4** (the scheme the AWS SDKs use), and the origin's resource
+policy trusts only the CloudFront service principal for this specific distribution —
+so direct public requests are denied.
+
+This stack uses OAC on **both** origins:
+
+- **S3 bucket** — the bucket blocks all public access; only CloudFront's OAC-signed
+  requests can read objects, so the S3 URL can't be hit directly.
+- **Lambda Function URL** — the URL uses `AWS_IAM` auth and CloudFront's OAC signs
+  the `/api/*` requests, so the function can't be invoked directly.
+
+OAC is the modern replacement for the older Origin Access Identity (OAI), which only
+worked with S3; OAC additionally supports Lambda function URLs and SSE-KMS. Because
+OAC signs the request, POSTs must include the body hash in `x-amz-content-sha256`
+(see gotcha #1 below).
 
 ## Deploy
 
